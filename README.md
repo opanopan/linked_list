@@ -1,1 +1,2 @@
-# linked_list
+Py200 
+Linked list realisation.
