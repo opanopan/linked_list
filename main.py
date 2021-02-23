@@ -29,9 +29,6 @@ class DoubleNode(Node):
         super().__init__(data, next_node)
         self.prev_node = prev_node
 
-    def __str__(self):
-        return f"[{self.data}]"
-
     @property
     def prev_node(self):
         return self._prev_node
@@ -41,9 +38,10 @@ class DoubleNode(Node):
         if value is not None and not isinstance(value, Node):
             raise ValueError
 
-        self._prev_node = value
-
-
+        if value is not None:
+            self._prev_node = weakref.proxy(value)
+        else:
+            self._prev_node = value
 
 
 class LinkedList:
@@ -88,9 +86,12 @@ class LinkedList:
 
     def _node_iter(self):
         current_node = self.head
+        begin_node = current_node
         while current_node is not None:
             yield current_node
             current_node = current_node.next_node
+            if current_node == begin_node:
+                break
 
     def append(self, data: Any):
         new_node = Node(data)
@@ -143,23 +144,83 @@ class LinkedList:
                     node.next_node = node.next_node.next_node
 
 
-ll = LinkedList()
-ll.append("a")
-ll.append("b")
-ll.append("c")
-ll.append("d")
-ll.append("e")
-# del ll[2]
-print(ll)
-ll[2] = "g"
-print(ll)
+class DoubleLinkedList(LinkedList):
+    def __init__(self):
+        super().__init__()
+        self.tail = None
 
+    def __str__(self):
+        result = "head: " + str(self.head) + ", tail: " + str(self.tail) + "\n"
+        result += "straght: " + "->".join(str(node) for node in self._node_iter()) + "\n"
+        result += "reverse: " + "<-".join(str(node) for node in self._node_iter_rev()) + "\n"
+        result += "size: " + str(self._size)
+        return result
 
-new = DoubleNode("a")
-print(new.__dict_)
-# ll.insert("6", 5)
-# ll.insert("6", 2)
-# ll.insert("6", 0)
-# print(ll)
+    def _node_iter_rev(self):
+        current_node = self.head
+        begin_node = current_node
+        while current_node is not None:
+            yield current_node
+            current_node = current_node._prev_node
+            if current_node == begin_node:
+                break
 
+    def append(self, data: Any):
+        new_node = DoubleNode(data)
+
+        if self.head == self.tail is None:  # List is empty
+            new_node.next_node = new_node.prev_node = new_node
+            self.head = self.tail = new_node
+            self._size = 1
+
+        else:
+            new_node.prev_node = self.tail
+            new_node.next_node = self.head
+            self.head.prev_node = new_node
+            self.tail.next_node = new_node
+            self.tail = new_node
+            self._size += 1
+
+    def insert(self, data, index=0):
+        if index < 0 or index > self._size:
+            raise ValueError
+
+        new_node = DoubleNode(data)
+        self._size += 1
+        if index == 0:
+            new_node.next_node = self.head
+            new_node.prev_node = self.tail
+            self.head.prev_node = self.tail.next_node = new_node
+            self.head = new_node
+        else:
+            for i, node in enumerate(self._node_iter()):
+                if i == index - 1:
+                    if node == self.tail:
+                        self.tail = new_node
+
+                    new_node.next_node = node.next_node
+                    new_node.prev_node = node
+                    node.next_node.prev_node = node.next_node = new_node
+
+    def clear(self):
+        self._size = 0
+        self.head = self.tail = None
+
+    def delete(self, index: int):
+        if index < 0 or index >= self._size:
+            raise ValueError
+
+        self._size -= 1
+        if index == 0:
+            self.head = self.head.next_node
+            self.head.prev_node = self.tail
+            self.tail.next_node = self.head
+        else:
+            for i, node in enumerate(self._node_iter()):
+                if i == index - 1:
+                    if node.next_node == self.tail:
+                        self.tail = self.tail.prev_node
+
+                    node.next_node.next_node.prev_node = node
+                    node.next_node = node.next_node.next_node
 
