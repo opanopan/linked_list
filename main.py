@@ -223,4 +223,3 @@ class DoubleLinkedList(LinkedList):
 
                     node.next_node.next_node.prev_node = node
                     node.next_node = node.next_node.next_node
-
